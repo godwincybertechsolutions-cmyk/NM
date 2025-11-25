@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
 import { NAV_ITEMS } from '../constants';
+import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -14,7 +16,17 @@ export const Navbar: React.FC = () => {
       setScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Check auth status
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Close mobile menu on route change
@@ -24,7 +36,7 @@ export const Navbar: React.FC = () => {
 
   // Navbar Logic:
   // Transparent only if on Home Page AND not scrolled.
-  // Solid Black otherwise.
+  // Solid Black otherwise (immediate on non-home pages).
   const isHomePage = location.pathname === '/';
   const isSolid = !isHomePage || scrolled;
 
@@ -33,18 +45,18 @@ export const Navbar: React.FC = () => {
       className={clsx(
         'fixed top-0 left-0 w-full z-50 transition-all duration-300 border-b',
         isSolid 
-          ? 'bg-brand-black/95 backdrop-blur-sm py-3 md:py-4 shadow-lg border-brand-accent/20' 
+          ? 'bg-brand-black/95 backdrop-blur-sm py-3 shadow-lg border-brand-accent/20' 
           : 'bg-transparent py-4 md:py-6 border-transparent'
       )}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center text-white">
         {/* Logo Placeholder */}
         <Link to="/" className="z-50 group shrink-0">
-          <div className="relative">
+          <div className="relative flex items-center">
              <img 
                src="https://placehold.co/200x60/transparent/FFFFFF/png?text=NEW+MANYATTA" 
                alt="New Manyatta Logo" 
-               className="h-8 md:h-10 w-auto object-contain transition-transform duration-300 hover:scale-105" 
+               className="h-8 md:h-12 w-auto object-contain transition-transform duration-300 hover:scale-105" 
              />
           </div>
         </Link>
@@ -66,13 +78,23 @@ export const Navbar: React.FC = () => {
           
           <div className="h-6 w-px bg-white/20 mx-2"></div>
           
-          <Link
-            to="/login"
-            className="flex items-center space-x-2 text-xs xl:text-sm font-medium uppercase tracking-widest hover:text-brand-accent transition-colors"
-          >
-            <User size={16} />
-            <span>Sign In</span>
-          </Link>
+          {user ? (
+            <Link
+              to="/profile"
+              className="flex items-center space-x-2 text-xs xl:text-sm font-medium uppercase tracking-widest hover:text-brand-accent transition-colors text-brand-accent"
+            >
+              <User size={16} />
+              <span>Account</span>
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center space-x-2 text-xs xl:text-sm font-medium uppercase tracking-widest hover:text-brand-accent transition-colors"
+            >
+              <User size={16} />
+              <span>Sign In</span>
+            </Link>
+          )}
 
           <Link
             to="/#contact"
@@ -87,13 +109,13 @@ export const Navbar: React.FC = () => {
           className="lg:hidden z-50 text-white hover:text-brand-accent transition-colors p-2"
           onClick={() => setIsOpen(!isOpen)}
         >
-          {isOpen ? <X size={28} /> : <Menu size={28} />}
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
         {/* Mobile Menu Overlay */}
         <div
           className={clsx(
-            'fixed inset-0 bg-brand-black flex flex-col justify-center items-center space-y-6 transition-all duration-500 ease-in-out lg:hidden z-40',
+            'fixed inset-0 bg-brand-black flex flex-col justify-center items-center space-y-8 transition-all duration-500 ease-in-out lg:hidden z-40',
             isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none'
           )}
         >
@@ -102,23 +124,34 @@ export const Navbar: React.FC = () => {
               key={item.path}
               to={item.path}
               className={clsx(
-                "text-2xl font-serif transition-colors",
+                "text-xl font-serif transition-colors",
                 location.pathname === item.path ? "text-brand-accent" : "text-white hover:text-brand-accent"
               )}
             >
               {item.label}
             </Link>
           ))}
-          <div className="h-px w-24 bg-gray-800 my-4"></div>
-          <Link
-            to="/login"
-            className="text-lg font-serif text-white hover:text-brand-accent transition-colors flex items-center gap-2"
-          >
-            <User size={20} /> Login / Sign Up
-          </Link>
+          <div className="h-px w-12 bg-gray-800 my-2"></div>
+          
+          {user ? (
+            <Link
+              to="/profile"
+              className="text-base font-serif text-brand-accent hover:text-white transition-colors flex items-center gap-2"
+            >
+              <User size={18} /> My Account
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="text-base font-serif text-white hover:text-brand-accent transition-colors flex items-center gap-2"
+            >
+              <User size={18} /> Login / Sign Up
+            </Link>
+          )}
+          
           <Link
             to="/#contact"
-            className="mt-4 bg-brand-accent text-white px-8 py-3 text-lg uppercase tracking-widest font-bold shadow-lg shadow-brand-accent/20"
+            className="mt-6 bg-brand-accent text-white px-10 py-3 text-sm uppercase tracking-widest font-bold shadow-lg shadow-brand-accent/20"
           >
             Book Now
           </Link>
