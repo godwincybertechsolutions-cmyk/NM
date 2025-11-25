@@ -7,7 +7,9 @@ import { Safaris } from './pages/Safaris';
 import { Apartments } from './pages/Apartments';
 import { Others } from './pages/Others';
 import { Login } from './pages/Login';
+import { Profile } from './pages/Profile';
 import { AIConcierge } from './components/AIConcierge';
+import { AuthGuard } from './components/AuthGuard';
 
 // Scroll to top helper
 const ScrollToTop = () => {
@@ -25,6 +27,7 @@ const App: React.FC = () => {
     <Router>
       <ScrollToTop />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/mt-kenya-homes" element={<MtKenyaHomes />} />
@@ -32,6 +35,11 @@ const App: React.FC = () => {
         <Route path="/apartments" element={<Apartments />} />
         <Route path="/others" element={<Others />} />
         <Route path="/login" element={<Login />} />
+
+        {/* Middleware Protected Routes */}
+        <Route element={<AuthGuard />}>
+          <Route path="/profile" element={<Profile />} />
+        </Route>
       </Routes>
       <AIConcierge />
     </Router>
