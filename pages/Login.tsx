@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
@@ -14,7 +14,11 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
   const navigate = useNavigate();
+  const location = useLocation();
+  // Get the page they came from, or default to home
+  const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +32,8 @@ export const Login: React.FC = () => {
           password,
         });
         if (error) throw error;
-        navigate('/'); // Redirect to home on success
+        // Redirect back to where they came from
+        navigate(from, { replace: true });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
